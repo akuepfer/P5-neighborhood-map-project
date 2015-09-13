@@ -106,7 +106,7 @@ echo ".idea" >> .gitignore
 
 git init
 git add .
-git commit -m "initial commit"
+git commit -m "initial commit" .
 git remote add origin https://github.com/akuepfer/P5-neighborhood-map-project.git
 git push -u origin master
 ----
