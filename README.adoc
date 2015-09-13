@@ -7,6 +7,10 @@ with places to visit. The implementation should use Google's map API and support
 Places found should be emphasized on the map. Additional information about a place should be retrieved by means
 of some third party API like Wikipedia or Yelp and displayed on demand.
 
+=== The application
+
+Try the application http://akuepfer.github.io/P5-neighborhood-map-project/src/index.html[Neighborhood Map] at gihub gh-pages.
+
 
 == Implementation
 
@@ -19,16 +23,16 @@ Files of the implementation
 
 * src/index.html                      - View, layout of the application
 * src/styles/style.css                - Styling of the view
-* src/js/view-model.js                - ViewModel 
+* src/js/view-model.js                - ViewModel
 * src/js/model.js                     - Model of the application
 * src/js/places-list.js               - List of predefined places to display on the map
 * src/js/yelp-search.js               - Function to query yelp
 * src/images/placeholder-100x100.png  - Image is inserted into yelp messages where yelp doesn't deliver an image url.
-* src/connect-error.png               - Image is inserted in yelp error messages 
+* src/connect-error.png               - Image is inserted in yelp error messages
 
 === Implementation Details
 
-* On startup all the locations are listed. 
+* On startup all the locations are listed.
 * Locations may be selected by a keyword or by entering a search string.
 * Pins on the map may have three different colors
   ** red - selected by click on the pin or by click in the search list
@@ -84,7 +88,7 @@ cd P5-neighborhood-map-project
 
 npm install -g gulp
 
-npm init 
+npm init
 npm install gulp --save-dev
 
 npm install browserify vinyl-source-stream --save-dev
