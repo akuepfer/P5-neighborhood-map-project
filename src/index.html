@@ -1,0 +1,102 @@
+<!--
+ ** Udacity Nighborhood Map Project
+ ** View - V of M-V-VM pattern
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <title>Udacity </title>
+    <link rel="stylesheet" type="text/css" href="styles/style.css">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+    <script src="http://oauth.googlecode.com/svn/code/javascript/oauth.js"></script>
+    <script src="http://oauth.googlecode.com/svn/code/javascript/sha1.js"></script>
+    <script src="lib/jquery-1.11.3.min.js"></script>
+    <script src="lib/knockout-3.3.0.js"></script>
+    <script src="js/places-list.js"></script>
+    <script src="js/yelp-search.js"></script>
+    <script src="js/model.js"></script>
+
+</head>
+<body>
+
+
+    <div id="map"><h1 class="error-message">No connection to the internet available!</h1></div>
+
+    <div id="search_input">
+        <div id="places_select">
+            Select:
+            <select id="placesSelect"
+                    data-bind="options: availableKeywords, optionsText: 'name', value: selectedKeyword">
+            </select>
+        </div>
+
+        <p>Search: <input placeholder="Enter location.." data-bind="textInput: searchInput"/></p>
+
+        <fieldset>
+            <legend>Additional Infos</legend>
+            <div><input type="radio" name="additionalInfoGroup" value="info"      data-bind="checked: additionalInfoSelect"/> Short Info</div>
+            <div><input type="radio" name="additionalInfoGroup" value="yelp"      data-bind="checked: additionalInfoSelect" /> Yelp</div>
+        </fieldset>
+
+        <div id="search_result">
+            <table>
+                <thead>
+                <tr><th>Place found</th></tr>
+                </thead>
+                <tbody data-bind="foreach: searchResult">
+                <tr>
+                    <td class="listEntry" data-bind="text: place.title, click: vm.showInfoWindow">"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="textInfoWindow" class="info_window" data-bind="visible: showInfoText">
+        <h1 class="info_title" data-bind="text: infoTitle"></h1>
+        <span class="info_text" data-bind="text: infoText"></span>
+        <br/>
+        <a target="_blank" data-bind="attr: { href: infoUrl, title: infoTitle }">Additional Info</a>
+        <br/>
+        <button data-bind="click: vm.hideInfoText">Hide</button>
+    </div>
+
+    <div id="yelpInfoWindow" class="info_window" data-bind="visible: showYelpInfoText">
+
+        <table>
+            <thead>
+                 <td><h3 class="info_title" data-bind="text: infoTitle"/></td>
+                 <td><button data-bind="click: vm.hideYelpInfoText">Hide</button></td>
+            </thead>
+            <tbody data-bind="foreach: yelpSearchResult">
+            <tr>
+                <td>
+                    <table>
+                        <tr>
+                            <td rowspan="2"><img  data-bind="attr:{src: imageUrl}"/></td>
+                            <td><h4 class="info_title" data-bind="text: name"/></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="info_text" data-bind="text: text"></span>
+                                <a target="_blank" data-bind="attr: { href: url }"> <span data-bind="text: link"></span></a>
+                            </td>
+                        </tr>
+                    </table>
+                <br/>
+            </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+</body>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?signed_in=true&callback=initMap"></script>
+<script src="js/view-model.js"></script>
+</body>
+</html>

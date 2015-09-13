@@ -1,0 +1,133 @@
+= Udacity Frontend Nanodegree Neighborhood Map Project
+
+== Introduction
+
+Develop a single page application using Knockoutjs and the MVVM pattern. The application should feature a map marked
+with places to visit. The implementation should use Google's map API and support searching within the places to visit.
+Places found should be emphasized on the map. Additional information about a place should be retrieved by means
+of some third party API like Wikipedia or Yelp and displayed on demand.
+
+
+== Implementation
+
+The implementation is following the M-V-VM pattern. Files are named accordingly except for the view. The view
+is implemented by the two files index.html and styles.css. The file name of the MVVM model is model.js and the view model's
+file name is view-model.js.
+
+
+Files of the implementation
+
+* src/index.html                      - View, layout of the application
+* src/styles/style.css                - Styling of the view
+* src/js/view-model.js                - ViewModel 
+* src/js/model.js                     - Model of the application
+* src/js/places-list.js               - List of predefined places to display on the map
+* src/js/yelp-search.js               - Function to query yelp
+* src/images/placeholder-100x100.png  - Image is inserted into yelp messages where yelp doesn't deliver an image url.
+* src/connect-error.png               - Image is inserted in yelp error messages 
+
+=== Implementation Details
+
+* On startup all the locations are listed. 
+* Locations may be selected by a keyword or by entering a search string.
+* Pins on the map may have three different colors
+  ** red - selected by click on the pin or by click in the search list
+  ** yellow - retrieved by search criteria
+  ** green - other pins
+
+image:doc/p5-map-pin-color.png["Main Screen"]
+
+* Clicking on a pin or a search list entry opens a window.
+* The type of the window content, either an info or a list from yelp, can be selected under 'Additional Info'.
+
+
+=== Connect Error handling
+
+If there is no connection to the internet the message 'No connection to the Internet available!' will be displayed.
+
+image:doc/map-connect-error.png["Google map Connect Error"]
+ +
+ +
+
+If the retrieval of data from yelp fails, the 'text status' and 'error thrown' messages return from the jQuery ajax call will
+be displayed on the popup window.
+
+image:doc/yelp-connect-error.png["Yelp Connect Error"]
+
+In this example jQuery ajax returns for both messages the text 'timeout'.
+
+== Checkout and run server
+
+The application can be run using `gulp serve` and connect on localhost port 3010 or by opening the `src/index.html` file.
+To run the application with gulp; npm and all required packages must be installed. The packages can be installed
+by running `gulpfile-install`.
+
+[source,shell]
+----
+git clone https://github.com/akuepfer/P5-neighborhood-map-project.git
+
+cd P5-neighborhood-map-project
+npm install -g gulp
+npm install -g gulpfile-install
+
+gulpfile-install
+gulp serve
+----
+
+== Inital project setup
+
+Create the `P5-neighborhood-map-project` directory and install the required gulp modules
+
+[source,shell]
+----
+cd P5-neighborhood-map-project
+
+npm install -g gulp
+
+npm init 
+npm install gulp --save-dev
+
+npm install browserify vinyl-source-stream --save-dev
+npm install express --save-dev
+npm install browser-sync --save-dev
+
+npm install --save-dev gulp-minify-css
+npm install --save-dev gulp-minify
+----
+
+
+## Push changes to new git reop
+
+[source,shell]
+----
+echo "dist" > .gitignore
+echo "node_modules  >> .gitignore
+echo ".idea" >> .gitignore
+
+git init
+git add .
+git commit -m "initial commit"
+git remote add origin https://github.com/akuepfer/P5-neighborhood-map-project.git
+git push -u origin master
+----
+
+
+## References
+
+* Knockout Documentation +
+  http://knockoutjs.com/documentation/introduction.html
+
+* Knockout Tutorial - Part 1 +
+  http://www.codeproject.com/Articles/636789/Knockout-Tutorial-Part
+
+* jQuery.ajax() +
+  http://api.jquery.com/jquery.ajax/
+
+* Understanding MVVM – A Guide For JavaScript Developers, Addy Osmani +
+  http://addyosmani.com/blog/understanding-mvvm-a-guide-for-javascript-developers/
+
+* Yelp For Developers, API 2.0: Overview +
+  https://www.yelp.co.uk/developers/documentation/v2/overview
+
+* Yelp Search Sample, Lev Brie +
+https://github.com/levbrie/mighty_marks/blob/master/yelp-search-sample.html
