@@ -8,6 +8,11 @@
  * - Data access, web services, database, etc.
  */
 
+/**
+ * The google map instance
+ * @type {google.maps.Map}
+ */
+var map;
 
 /**
  * Array of pins displayed on the map
@@ -20,14 +25,40 @@ var mapPins = [];
  * The currently selected pin on the map.
  * @type {google.maps.Marker}
  */
-var selectedMarker = null;
+var selectedMapPin = null;
 
 /**
- * The icon of the currently selected marker before it was selected.
- * Used to redraw the pin afer it looses the selection
- * @type {google.maps.Marker.icon}
+ * The info window attached to a pin of the map.
+ * Window will be reused, only content changes.
+ * @type {google.maps.InfoWindow}
  */
-var initialIcon = null;
+var infoWindow;
+
+
+/**
+ * Initializes the map and creates the array of pins to display
+ */
+initMap = function () {
+
+    var center = { lat: 46.78000496 , lng: 8.37522517 };
+
+    map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 8,
+        center: center
+    });
+
+    infoWindow = new google.maps.InfoWindow({
+        maxWidth: 300,
+        maxHight: 600,
+        content: '<div id="content" class="info_window"><p>data load failed<p></p></div>'
+    });
+
+    for (i = 0; i < placesModel.placesList.length; i++) {
+        mapPin = new MapPin(map, placesModel.placesList[i]);
+        mapPins.push(mapPin);
+        vm.addSearchResult(mapPin);
+    }
+};
 
 
 /**
@@ -46,31 +77,41 @@ var MapPin = function(map, place) {
         map: map,
         title: place.title,
         animation: null,
-        icon: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+        icon: 'images/' + place.keyword[0] + '.png'
     });
 
     this.marker.addListener('click', (function() {
-        vm.showInfoWindow(this);
+        vm.showInfoWindowFoward(this);
     }).bind(this));
 
-}
+};
+
+
 
 /**
  * Sets this map pin as selected, draw it in red
  */
 MapPin.prototype.markSelected = function() {
-    if (this.marker === selectedMarker) {
-        return;
+    if (selectedMapPin !== null) {
+        selectedMapPin.marker.setZIndex(google.maps.Marker.MAX_ZINDEX - 1);
     }
-    if (selectedMarker != null) {
-        selectedMarker.setIcon(initialIcon)
-        selectedMarker.setZIndex(google.maps.Marker.MAX_ZINDEX - 1);
-    }
-    selectedMarker = this.marker;
-    initialIcon = this.marker.icon;
-    this.marker.setIcon('http://maps.google.com/mapfiles/ms/icons/red-dot.png')
+    selectedMapPin = this;
+
+    map.setCenter({lat: this.place.lat, lng: this.place.lng + 0.6});
     this.marker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
-}
+    this.marker.setAnimation(google.maps.Animation.BOUNCE);
+    mapPinAnnimation(this.marker, 1500);
+};
+
+
+mapPinAnnimation = function(aMarker, aTime)  {
+    var marker = aMarker;
+    var time = aTime;
+    setTimeout(function () {
+        marker.setAnimation(google.maps.Animation.NONE);
+    }, time);
+};
+
 
 
 /**
@@ -89,7 +130,7 @@ MapPin.prototype.matchKeyword = function(keyword) {
         }
     }
     return false;
-}
+};
 
 
 /**
@@ -97,34 +138,29 @@ MapPin.prototype.matchKeyword = function(keyword) {
  * @param start text string
  * @returns {boolean}
  */
-MapPin.prototype.matchTitle = function(start) {
-    if (this.place.title.startsWith(start)) {
+MapPin.prototype.matchTitle = function(matchString) {
+    if (this.place.title.toLowerCase().indexOf(matchString.toLowerCase()) != -1) {
         return true;
     }
     return false;
-}
+};
 
 
 /**
- * Updated the color of a map pin
- * - selected yellow color
- * - not selected green color
- *
- * @param selected {boolean}
+ * Enable / disable display of a man pin.
+ * @param selected {boolean} true to display, false to hide.
  */
 MapPin.prototype.setSelected = function(selected) {
     if (selected) {
-        this.marker.setIcon('http://maps.google.com/mapfiles/ms/icons/yellow-dot.png')
-        this.marker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
+        this.marker.setMap(map);
     } else {
-        this.marker.setIcon('http://maps.google.com/mapfiles/ms/icons/green-dot.png')
-        this.marker.setZIndex(google.maps.Marker.MAX_ZINDEX - 1);
+        this.marker.setMap(null);
     }
-}
+};
 
 
 /**
- * Updates the color of all pins having the keyword assigned.
+ * Updates the pins displayed on the map.
  * Updates the search result array.
  * @param keyword keyword to compare with keywords of the place
  */
@@ -132,17 +168,17 @@ function markerKeywordMatch(keyword) {
     vm.removeSearchResults();
     for (var i = 0; i < mapPins.length; i++) {
         if (mapPins[i].matchKeyword(keyword)) {
-            mapPins[i].setSelected(true)
+            mapPins[i].setSelected(true);
             vm.addSearchResult(mapPins[i]);
         } else {
-            mapPins[i].setSelected(false)
+            mapPins[i].setSelected(false);
         }
     }
 }
 
 
 /**
- * Updates the color of all pins where the title starts with the match string.
+ * Updates the pins displayed on the map.
  * Updates the search result array.
  * @param match string to match
  */
@@ -150,10 +186,10 @@ function markerTitleMatch(match) {
     vm.removeSearchResults();
     for (var i = 0; i < mapPins.length; i++) {
         if (mapPins[i].matchTitle(match)) {
-            mapPins[i].setSelected(true)
+            mapPins[i].setSelected(true);
             vm.addSearchResult(mapPins[i]);
         } else {
-            mapPins[i].setSelected(false)
+            mapPins[i].setSelected(false);
         }
     }
 }
@@ -162,10 +198,11 @@ function markerTitleMatch(match) {
 /**
  * Search yelp with term 'restaurant' and a location
  * @param location location to search with
- * @param returnValues push returned values to array
+ * @param returnValues retrieved values will be pushed to this array
  */
-function searchYelp(location, returnValues) {
-    yelpSearch('restaurant', location.place.title,
+function searchYelp(mapPin, returnValues) {
+
+    yelpSearch('restaurant', mapPin.place.title,
         function(yelpResult) {
             for (var i = 0; i < yelpResult.businesses.length; i++) {
                 returnValues.push({
@@ -176,6 +213,7 @@ function searchYelp(location, returnValues) {
                     link: yelpResult.businesses[i].name,
                 });
             }
+            showMapInfoWindow(mapPin, "#yelpInfoWindow");
         },
         function(textStatus, errorThrown) {
             returnValues.push({
@@ -185,37 +223,84 @@ function searchYelp(location, returnValues) {
                 url: "",
                 link: ""
             });
+            showMapInfoWindow(mapPin, "#yelpInfoWindow");
         }
     );
 }
 
 
 /**
- * 'Ployfill' for string startsWith method
+ * Search meetup with the coordinates of the mapPin
+ * @param mapPin coordinates to search with
+ * @param returnValues retrieved values will be pushed to this array.
  */
-if (!String.prototype.startsWith) {
-    String.prototype.startsWith = function(searchString, position) {
-        position = position || 0;
-        return this.indexOf(searchString, position) === position;
-    };
+function searchMeetup(mapPin, returnValues) {
+    var description = "";
+    var address = "";
+    var city = "";
+    meetupSearch(mapPin.place,
+        function(meetupResult) {
+            for (var i = 0; i < meetupResult.results.length; i++) {
+                if (meetupResult.results[i].description === undefined || meetupResult.results[i].description.length < 120) {
+                    description = meetupResult.results[i].description;
+                } else {
+                    description = meetupResult.results[i].description.substring(0, 120) + ' ...';
+                }
+                if (meetupResult.results[i].venue !== undefined) {
+                    address = meetupResult.results[i].venue.address_1;
+                    city = meetupResult.results[i].venue.city;
+                }
+                returnValues.push({
+                    name: meetupResult.results[i].name,
+                    description: description,
+                    address: address,
+                    city: city,
+                    time: new Date(meetupResult.results[i].time).toLocaleString(),
+                    event_url: meetupResult.results[i].event_url,
+                    urlname: meetupResult.results[i].group.urlname
+                });
+            }
+            if (meetupResult.results.length === 0) {
+                returnValues.push({
+                    name: "No meeetup in this area.",
+                    description: "",
+                    city: "",
+                    time: "",
+                    url: "",
+                    address: "",
+                    event_url: "",
+                    urlname: ""
+                });
+            }
+            showMapInfoWindow(mapPin, "#meetupInfoWindow");
+        },
+        function(textStatus, errorThrown) {
+            returnValues.push({
+                name: textStatus,
+                description: errorThrown,
+                city: "",
+                time: "",
+                url: "",
+                address: "",
+                event_url: "",
+                urlname: ""
+            });
+            showMapInfoWindow(mapPin, "#meetupInfoWindow");
+        }
+    );
 }
 
 
 /**
- * Intializes the map and creates the array of pins to display
+ * Retrieve hidden dom tree and display it in the google map info window.
+ * Therefore creation of the HTML code for the popup window is delegated to knockoutjs.
+ *
+ * @param mapPin the pin on the map where the content must be attached to
+ * @param nodeId the id of the hidden dom tree to display in the info window
  */
-initMap = function () {
+showMapInfoWindow = function(mapPin, nodeId) {
+    var node = $(nodeId).clone();
+    infoWindow.setContent(node.html());
+    infoWindow.open(map, mapPin.marker);
+};
 
-    var center = { lat: 46.78000496 , lng: 8.37522517 };
-
-    var map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 8,
-        center: center
-    });
-
-    for (i = 0; i < placesModel.placesList.length; i++) {
-        mapPin = new MapPin(map, placesModel.placesList[i]);
-        mapPins.push(mapPin);
-        vm.addSearchResult(mapPin);
-    }
-}

@@ -22,36 +22,41 @@ var Keyword = function(name, keyword) {
  */
 function ViewModel() {
 
+    var self = this;
+
     /**
-     * Predefined keywords for location search
+     * Predefined keywords for location search by keyword
      */
-    this.availableKeywords = ko.observableArray([
+    self.availableKeywords = ko.observableArray([
         new Keyword("All", "all"),
         new Keyword("Capital", "capital"),
         new Keyword("City", "city"),
         new Keyword("Domicile", "domicile"),
-        new Keyword("Tourist attraction", "tourist attraction"),
+        new Keyword("Tourist attraction", "attraction"),
         new Keyword("Mountain", "mountain"),
         new Keyword("Sports", "sport"),
-        new Keyword("Place of interest", "place of interest"),
+        new Keyword("Place of interest", "science"),
         new Keyword("Science", "science")
     ]);
 
     /**
      * Places of interest keyword selection
      */
-    this.selectedKeyword = ko.observable({ name: "All",  ident: "all" });
-    this.selectedKeyword.subscribe(function (newValue) {
+    self.selectedKeyword = ko.observable({name: "All", ident: "all"});
+    self.selectedKeyword.subscribe(function (newValue) {
         console.log("selected keyword " + newValue.name);
         markerKeywordMatch(newValue.ident);
     });
 
 
     /**
-     * Search dialog
+     * Search dialog, using subscribe instead of a click callback has the advantage
+     * that this method is called whenever a character is added to or removed from the searchInput.
+     * When using a click callback (without additional configuration) the callback is trigggered bevore the
+     * character is available.
      */
-    this.searchInput = ko.observable("");
-    this.searchInput.subscribe(function (newValue) {
+    self.searchInput = ko.observable("");
+    self.searchInput.subscribe(function (newValue) {
         console.log("new Value " + newValue);
         markerTitleMatch(newValue);
     });
@@ -59,101 +64,133 @@ function ViewModel() {
     /**
      * Additional info radio group, to set the additional info source
      */
-    this.additionalInfo = "info";
-    this.additionalInfoSelect = ko.observable();
-    this.additionalInfoSelect.subscribe((function (newValue) {
+    self.additionalInfo = "info";
+    self.additionalInfoSelect = ko.observable();
+    self.additionalInfoSelect.subscribe(function (newValue) {
         console.log("additionalInfoSelect " + newValue);
-        this.additionalInfo = newValue;
-    }).bind(this));
+        self.additionalInfo = newValue;
+    });
 
     /**
      * Search result list
      */
-    this.searchResult = ko.observableArray([]);
+    self.searchResult = ko.observableArray([]);
 
     /**
      * Info Text
      */
-    this.showInfoText = ko.observable(false);
-    this.infoTitle = ko.observable();
-    this.infoText = ko.observable();
-    this.infoUrl = ko.observable();
+    self.showInfoText = ko.observable(false);
+    self.infoTitle = ko.observable();
+    self.infoText = ko.observable();
+    self.infoUrl = ko.observable();
 
     /**
      * Yelp Info Text
      */
-    this.showYelpInfoText = ko.observable(false);
-    this.yelpSearchResult = ko.observableArray([]);
+    self.showYelpInfoText = ko.observable(false);
+    self.yelpSearchResult = ko.observableArray([]);
+
+    /**
+     * Meetup Search
+     */
+    self.showMeetupInfoText = ko.observable(false);
+    self.meetupSearchResult = ko.observableArray([]);
+
+
+    showSearchInput = function() {
+        $("#search_input").fadeIn("slow");
+    };
+
+    hideSearchInput = function() {
+        $("#search_input").fadeOut("slow");
+    };
+
+
+    /**
+     * To display the info window for the selected pin and to fade out the search window on small displays.
+     * The info window is either a an overview window, a list of yelp resources or a list of meetup resources,
+     * depending on the user selection.
+     *
+     * @param selectPin pin to display info about
+     */
+    self.showInfoWindow = function (selectPin) {
+
+        selectPin.markSelected();
+
+        if ($(window).width() < 800) {
+            $("#search_input").fadeOut("slow");
+        }
+
+        if (self.additionalInfo === "info") {
+            self.showInfoTextWindow(selectPin);
+        } else if (self.additionalInfo === "yelp") {
+            self.showYelpInfoWindow(selectPin);
+        } else {
+            self.showMeetupInfoWindow(selectPin);
+        }
+    };
+
+
+    /**
+     * To display the text info window
+     * @param selectedMapPin pin to display info about
+     */
+    self.showInfoTextWindow = function (selectedMapPin) {
+
+        self.infoTitle(selectedMapPin.place.title);
+        self.infoText(selectedMapPin.place.text);
+        self.infoUrl(selectedMapPin.place.url);
+        showMapInfoWindow(selectedMapPin, "#textInfoWindow");
+    };
+
+
+    /**
+     * To display the yelp info window.
+     * @param select pin to display info about
+     */
+    self.showYelpInfoWindow = function (selectedMapPin) {
+        self.infoTitle(selectedMapPin.place.title);
+        self.yelpSearchResult.removeAll();
+        searchYelp(selectedMapPin, self.yelpSearchResult);
+    };
+
+    /**
+     * To display the meetuo info window.
+     * @param select pin to display info about
+     */
+    self.showMeetupInfoWindow = function (selectedMapPin) {
+        self.infoTitle(selectedMapPin.place.title);
+        self.meetupSearchResult.removeAll();
+        searchMeetup(selectedMapPin, self.meetupSearchResult);
+    };
+
+}
+
+/**
+ * To call showInfoWindow from the view and from the model
+ * @param selectedPin
+ */
+ViewModel.prototype.showInfoWindowFoward = function(selectedPin) {
+    vm.showInfoWindow(selectedPin);
 };
+
 
 /**
  * Adds a pin to the search result array.
  * @param pin
  */
-ViewModel.prototype.addSearchResult = function(pin) {
-    this.searchResult.push(pin)
-}
+ViewModel.prototype.addSearchResult = function (pin) {
+    this.searchResult.push(pin);
+};
+
 
 /**
  * Empties the search result array
  */
-ViewModel.prototype.removeSearchResults = function() {
-    this.searchResult.removeAll()
-}
-
-/**
- * To enable the info window for the selected pin.
- * This is either a an overview window or a list of yelp resources depending on the user selection.
- *
- * @param selectPin pin to display info about
- */
-ViewModel.prototype.showInfoWindow = function(selectPin) {
-    selectPin.markSelected();
-    if (vm.additionalInfo === "info") {
-        vm.showInfoTextWindow(selectPin)
-    } else {
-        vm.showYelpInfoWindow(selectPin)
-    }
-
+ViewModel.prototype.removeSearchResults = function () {
+    this.searchResult.removeAll();
 };
 
-/**
- * To display the text info window
- * @param select pin to display info about
- */
-ViewModel.prototype.showInfoTextWindow = function(select) {
-    vm.infoTitle(select.place.title);
-    vm.infoText(select.place.text);
-    vm.infoUrl(select.place.url)
-    vm.showYelpInfoText(false);
-    vm.showInfoText(true);
-};
-
-/**
- * Hide the text info window
- */
-ViewModel.prototype.hideInfoText = function() {
-    vm.showInfoText(false);
-}
-
-/**
- * To display the yelp info window.
- * @param select pin to display info about
- */
-ViewModel.prototype.showYelpInfoWindow = function(select) {
-    vm.infoTitle(select.place.title);
-    vm.yelpSearchResult.removeAll();
-    searchYelp(select, vm.yelpSearchResult);
-    vm.showInfoText(false);
-    vm.showYelpInfoText(true);
-};
-
-/**
- * Hide the yelp info window
- */
-ViewModel.prototype.hideYelpInfoText = function() {
-    vm.showYelpInfoText(false);
-}
 
 /**
  * Either returns image or if undefined the path to a dummy image.
@@ -162,7 +199,7 @@ ViewModel.prototype.hideYelpInfoText = function() {
  */
 function imageUrl(image) {
     if (image === undefined) {
-        return "images/placeholder-100x100.png";
+        return "images/user_medium_square.png";
     } else {
         return image;
     }
@@ -175,4 +212,8 @@ function imageUrl(image) {
 var vm = new ViewModel();
 ko.applyBindings(vm);
 
+/**
+ * Set first entry of Search, Additional Info as selected.
+ */
+$('#infoId').prop('checked', true);
 

@@ -51,7 +51,7 @@ yelpSearch = function(term, location, callback, errorCallback) {
     OAuth.SignatureMethod.sign(message, accessor);
 
     var parameterMap = OAuth.getParameterMap(message.parameters);
-    parameterMap.oauth_signature = OAuth.percentEncode(parameterMap.oauth_signature)
+    parameterMap.oauth_signature = OAuth.percentEncode(parameterMap.oauth_signature);
 
     console.log(parameterMap);
     $.ajax({
@@ -69,4 +69,5 @@ yelpSearch = function(term, location, callback, errorCallback) {
             errorCallback(textStatus, errorThrown);
         }
     });
-}
+};
+
